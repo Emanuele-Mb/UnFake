@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # ---------------- ENUMS -------------------------- #
 
@@ -181,14 +181,19 @@ class AgencyModel(BaseModel):
 
 class AnalysisItem(BaseModel):
     id: int = Field(description="The index of the headline")
-    # Dict[str, int] handles the Bias Enum ID as key and 1-5 score as value
     bias: Dict[str, int] = Field(description="Map of Bias Enum IDs (1-13) to intensity 1-3. Empty {} if none.")
     agency: List[AgencyModel]
     framing: int = Field(description="GenericFraming Enum ID (1-6)")
-    # Focus as a list of dicts with at most 2 items
     focus: List[int] = Field(description="List of max 2 objects mapping Focus ID (1-14)", max_length=2)
     genre: int = Field(description="Genre Enum ID (1-6)")
     tone: int = Field(description="Tone intensity score 1-5")
+
+    @field_validator('focus', mode='before')
+    @classmethod
+    def truncate_focus(cls, v):
+        if isinstance(v, list) and len(v) > 2:
+            return v[:2]
+        return v
 
 class AnalysisResponse(BaseModel):
     analyses: List[AnalysisItem]

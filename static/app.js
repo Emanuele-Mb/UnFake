@@ -642,22 +642,58 @@ const TONE_INTENSITY_TOOLTIP =
       const srcCounts = {};
       articles.forEach(a => { srcCounts[a.source] = (srcCounts[a.source] || 0) + 1; });
 
-      if (barChart) barChart.destroy();
-      barChart = new Chart(document.getElementById("bar-chart"), {
-        type: "bar",
-        data: {
-          labels: Object.keys(srcCounts),
-                           datasets: [{ label: "Articles", data: Object.values(srcCounts), backgroundColor: "#4f46e5", borderRadius: 5, barThickness: 28 }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, border: { display: false }, ticks: { font: { family: "'DM Sans'", size: 11 }, color: "#717182" } },
-            y: { grid: { color: "#f0f0f2" }, border: { display: false }, ticks: { precision: 0, font: { family: "'DM Sans'", size: 11 }, color: "#717182" } },
-          },
-        },
+      // ── Bar Chart (Tone Intensity) ─────────────────────────────────
+      const intensityCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+      articles.forEach(a => {
+        const intensity = a.tone_intensity || 3;
+        if (intensityCounts[intensity] !== undefined) {
+          intensityCounts[intensity]++;
+        }
       });
+
+      const intensityColors = ["#10b981", "#84cc16", "#f59e0b", "#f97316", "#ef4444"];
+
+      if (barChart) barChart.destroy();
+      const barCanvas = document.getElementById("bar-chart");
+      if (barCanvas) {
+        barChart = new Chart(barCanvas, {
+          type: "bar",
+          data: {
+            labels: ["1", "2", "3", "4", "5"],
+            datasets: [{
+              label: "Articoli",
+              data: [
+                intensityCounts[1],
+                intensityCounts[2],
+                intensityCounts[3],
+                intensityCounts[4],
+                intensityCounts[5]
+              ],
+              backgroundColor: intensityColors,
+              borderRadius: 5,
+              barThickness: 28
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: { font: { family: "'DM Sans'", size: 11 }, color: "#717182" }
+              },
+              y: {
+                grid: { color: "#f0f0f2" },
+                border: { display: false },
+                ticks: { precision: 0, font: { family: "'DM Sans'", size: 11 }, color: "#717182" }
+              },
+            },
+          },
+        });
+      }
     }
 
     // ── Actors ─────────────────────────────────────────────────────
