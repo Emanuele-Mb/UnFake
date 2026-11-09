@@ -78,7 +78,6 @@ def fetch_from_duckduckgo(query: str, lang: str = "wt", country: str = "WT", max
 
     try:
         with DDGS(timeout=40) as ddgs:
-            # Corretto: 'query' passato come primo parametro posizionale
             results = ddgs.news(query, region=region, max_results=max_results)
 
             for item in results:
