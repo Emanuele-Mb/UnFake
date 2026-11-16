@@ -3,3 +3,4 @@ __pycache__/
 temp_test_snippets/
 .env
 firebase-credentials.json
+models/
