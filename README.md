@@ -77,6 +77,15 @@ GNEWS_KEY=your_gnews_key
 ```bash
 GEMINI_API_KEY=your_gemini_api_key
 ```
+
+### Local Emotion Model Setup
+
+To run the RoBERTa emotion classifier offline, download the model weights (~500 MB) into the `models/` directory (excluded via `.gitignore`) before starting the server. With your virtual enviroment activated:
+
+```bash
+hf download SamLowe/roberta-base-go_emotions --local-dir ./models/roberta-go-emotions
+```
+
 ### AI Models Configuration (config.yaml)
 
 The models used for AI-based tasks at runtime can be easily specified by changing the config.yaml file. Currently, Gemini and Deepseek are available. The tool is designed to be modular for future implementations.
