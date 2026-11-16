@@ -21,7 +21,7 @@ export function showSkeletons() {
     if (!DOM.headlinesList) return;
     DOM.headlinesList.innerHTML = `
     <div class="loading-cards">
-    ${[1,2,3].map(() => `
+    ${[1, 2, 3].map(() => `
         <div class="skeleton-card">
         <div class="skeleton-line" style="width:40%;height:12px;"></div>
         <div class="skeleton-line" style="width:90%;height:20px;margin-top:14px;"></div>
@@ -142,7 +142,7 @@ export function buildFilters() {
             label.style.textOverflow = "ellipsis";
             label.style.whiteSpace = "nowrap";
 
-            label.innerHTML = `<input type="checkbox" ${state.selectedSources.includes(src) ? "checked" : ""}/><span title="${src}">${src}</span>`;
+            label.innerHTML = `<input type="checkbox" ${state.selectedSources.includes(src) ? "checked" : ""}/><span title="${esc(src)}">${esc(src)}</span>`;
 
             label.querySelector("input").addEventListener("change", () => {
                 if (state.selectedSources.includes(src)) {
@@ -194,7 +194,7 @@ export function buildFilters() {
     emotions.forEach(s => {
         const label = document.createElement("label");
         label.className = "filter-item capitalize";
-        label.innerHTML = `<input type="checkbox" ${state.selectedSentiments.includes(s) ? "checked" : ""}/><span>${s.toLowerCase()}</span>`;
+        label.innerHTML = `<input type="checkbox" ${state.selectedSentiments.includes(s) ? "checked" : ""}/><span>${esc(s.toLowerCase())}</span>`;
 
         label.querySelector("input").addEventListener("change", () => {
             if (state.selectedSentiments.includes(s)) {
@@ -211,7 +211,9 @@ export function buildFilters() {
 export function renderResults() {
     const filtered = state.allArticles.filter(a =>
     state.selectedSources.includes(a.source) &&
-    (Array.isArray(a.sentiment) ? a.sentiment.some(s => state.selectedSentiments.includes(s)) : state.selectedSentiments.includes(a.sentiment))
+    (Array.isArray(a.sentiment)
+    ? a.sentiment.some(s => state.selectedSentiments.includes(s))
+    : state.selectedSentiments.includes(a.sentiment))
     );
 
     if (DOM.headlinesCount) DOM.headlinesCount.textContent = `Headlines (${filtered.length})`;
@@ -230,8 +232,8 @@ export function renderResults() {
 }
 
 export function buildCard(article) {
-    const NEGATIVE_EMOTIONS = new Set(["ANGER","ANNOYANCE","DISAPPOINTMENT","DISAPPROVAL","DISGUST","EMBARRASSMENT","FEAR","GRIEF","NERVOUSNESS","REMORSE","SADNESS"]);
-    const POSITIVE_EMOTIONS = new Set(["ADMIRATION","AMUSEMENT","APPROVAL","CARING","DESIRE","EXCITEMENT","GRATITUDE","JOY","LOVE","OPTIMISM","PRIDE","RELIEF"]);
+    const NEGATIVE_EMOTIONS = new Set(["ANGER", "ANNOYANCE", "DISAPPOINTMENT", "DISAPPROVAL", "DISGUST", "EMBARRASSMENT", "FEAR", "GRIEF", "NERVOUSNESS", "REMORSE", "SADNESS"]);
+    const POSITIVE_EMOTIONS = new Set(["ADMIRATION", "AMUSEMENT", "APPROVAL", "CARING", "DESIRE", "EXCITEMENT", "GRATITUDE", "JOY", "LOVE", "OPTIMISM", "PRIDE", "RELIEF"]);
 
     const primarySentiment = Array.isArray(article.sentiment) ? article.sentiment[0] : article.sentiment;
     const valence = NEGATIVE_EMOTIONS.has(primarySentiment) ? "negative"
@@ -259,14 +261,19 @@ export function buildCard(article) {
     });
 
     const actorTags = article.actors.map(a =>
-    `<span class="actor-tag">${esc(a.name)} <em class="actor-role"><span class="tooltip-wrapper" data-tooltip="${tagTooltip('agency', a.role)}">${esc(a.role)}</span></em></span>`
+    `<span class="actor-tag">${esc(a.name)} <em class="actor-role"><span class="tooltip-wrapper" data-tooltip="${esc(tagTooltip('agency', a.role))}">${esc(a.role)}</span></em></span>`
     ).join("");
 
-    const focusTags = (article.focuses || article.focus || []).map(f =>
-    `<span class="focus-tag"><span class="tooltip-wrapper" data-tooltip="${tagTooltip('focus', f)}">${esc(f)}</span></span>`
-    ).join("");
+    const rawFocus = article.focuses || article.focus || [];
+    const focusList = Array.isArray(rawFocus) ? rawFocus : [rawFocus];
+    const focusTags = focusList
+    .filter(Boolean)
+    .map(f => `<span class="focus-tag"><span class="tooltip-wrapper" data-tooltip="${esc(tagTooltip('focus', f))}">${esc(String(f).replace(/_/g, " "))}</span></span>`)
+    .join("");
 
-    const urlLine = article.url ? `<div class="card-url"><a href="${esc(article.url)}" target="_blank" rel="noopener">Read original article ↗</a></div>` : "";
+    const urlLine = article.url
+    ? `<div class="card-url"><a href="${esc(article.url)}" target="_blank" rel="noopener">Read original article ↗</a></div>`
+    : "";
 
     const card = document.createElement("article");
     card.className = "result-card";
@@ -276,18 +283,18 @@ export function buildCard(article) {
     <div class="source-avatar">${esc(article.source.charAt(0))}</div>
     <span class="source-name">${esc(article.source)}</span>
     </div>
-    <div class="sentiment-badge ${badgeClass}">${icon} ${displaySentiment}</div>
+    <div class="sentiment-badge ${badgeClass}">${icon} ${esc(displaySentiment)}</div>
     </div>
     <h3 class="card-headline">${headlineHTML}</h3>
 
     <div class="analysis-tags">
     <span class="analysis-tag tag-frame">
-    <span class="tooltip-wrapper" data-tooltip="${tagTooltip('frame', article.frame)}">
+    <span class="tooltip-wrapper" data-tooltip="${esc(tagTooltip('frame', article.frame))}">
     Frame: ${esc(article.frame)}
     </span>
     </span>
     <span class="analysis-tag tag-genre">
-    <span class="tooltip-wrapper" data-tooltip="${tagTooltip('genre', article.genre)}">
+    <span class="tooltip-wrapper" data-tooltip="${esc(tagTooltip('genre', article.genre))}">
     Genre: ${esc(article.genre)}
     </span>
     </span>
@@ -311,7 +318,7 @@ export function buildCard(article) {
         </div>
         </div>
 
-        ${focusTags ? `<div class="meta-focus" style="margin-top: 4px;"><span class="meta-label">Focus:</span><div class="focus-tags">${focusTags}</div></div>` : ""}
+        ${focusTags ? `<div class="meta-focus"><span class="meta-label">Focus:</span><div class="focus-tags">${focusTags}</div></div>` : ""}
         </div>
 
         ${urlLine}
@@ -336,7 +343,7 @@ export function buildStarRating(article) {
 
     return `
     <div class="star-rating" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-    <span class="rating-label tooltip-wrapper" data-tooltip="${TONE_INTENSITY_TOOLTIP}" style="white-space: nowrap;">Tone Intensity: ${intensity}/5</span>
+    <span class="rating-label tooltip-wrapper" data-tooltip="${esc(TONE_INTENSITY_TOOLTIP)}" style="white-space: nowrap;">Tone Intensity: ${intensity}/5</span>
     <div style="width: 80px; min-width: 180px; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
     <div style="width: ${percentage}%; height: 100%; background-color: ${barColor}; border-radius: 4px;"></div>
     </div>
@@ -362,15 +369,18 @@ export function buildBiasTags(biasesObj) {
 
         return `
         <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; background-color: ${color}15; color: ${color}; font-size: 12px; font-weight: 600; border: 1px solid ${color}30;">
-        ${bias} <span style="opacity: 0.7; margin-left: 4px; font-size: 10px;">(${intensityLabel})</span>
+        ${esc(bias)} <span style="opacity: 0.7; margin-left: 4px; font-size: 10px;">(${intensityLabel})</span>
         </span>`;
     }).join('');
 }
 
 export function renderActors(articles) {
     const counts = {};
-    articles.forEach(a => a.actors.forEach(actor => { const key = actor.name || actor; counts[key] = (counts[key] || 0) + 1; }));
-    const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    articles.forEach(a => a.actors.forEach(actor => {
+        const key = actor.name || actor;
+        counts[key] = (counts[key] || 0) + 1;
+    }));
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
     const listEl = document.getElementById("actors-list");
     if (listEl) {

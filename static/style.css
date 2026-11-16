@@ -609,3 +609,42 @@ input, textarea { font-family: inherit; }
   right: 85px;
   font-size: 0.85rem;
 }
+
+.meta-focus {
+display: inline-flex;
+align-items: center;
+flex-wrap: wrap;
+gap: 8px;
+width: 100%;
+margin-top: 4px;
+}
+
+.meta-label {
+font-size: 12px;
+font-weight: 700;
+color: #475569;
+}
+
+.focus-tags {
+display: inline-flex;
+align-items: center;
+flex-wrap: wrap;
+gap: 6px;
+}
+
+.focus-tag {
+display: inline-flex;
+align-items: center;
+font-size: 0.73rem;
+font-weight: 600;
+padding: 3px 9px;
+border-radius: 5px;
+color: #185FA5;
+background: #E6F1FB;
+border: 1px solid #85B7EB;
+}
+
+.result-card:hover {
+z-index: 10;
+position: relative;
+}
