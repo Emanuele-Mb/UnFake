@@ -31,5 +31,6 @@ llm_framing_analyzer:
 
 # HuggingFace model used (BERT or roBERTa) to detect emotional tone of the headlines at run time
 hf_emotions_detector:
-  model: SamLowe/roberta-base-go_emotions
-
+  model: ./models/roberta-go-emotions
+  batch_size: 32
+  secondary_threshold: 0.02

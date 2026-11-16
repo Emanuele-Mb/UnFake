@@ -100,11 +100,11 @@ class EmotionsEnum(Enum):
 
 # ---------------- DATA CLASSES -------------------- #
 
-@dataclass(frozen=True) # make it immutable after creation
+@dataclass(frozen=True)
 class Article:
     title: str
     source: str
-    query_origin: str # which query retrieved this
+    query_origin: str
     published_at: datetime | None = None
     url: str = ""
     description: str | None = None

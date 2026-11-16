@@ -1,8 +1,13 @@
 from .framing_analyzer import FramingAnalyzer
-from .framing_analysis import analyze_emotions, llm_framing_analysis
+from .framing_analysis import (
+    llm_framing_analysis,
+    predict_emotions,
+    warmup_emotion_classifier,
+)
 
 __all__ = [
-    "analyze_emotions",
+    "FramingAnalyzer",
     "llm_framing_analysis",
-    "FramingAnalyzer"
+    "predict_emotions",
+    "warmup_emotion_classifier",
 ]
