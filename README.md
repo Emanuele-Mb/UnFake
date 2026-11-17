@@ -26,7 +26,7 @@ Because MediaSpin focuses on editorial and linguistic spin rather than demograph
 
 ---
 
-##Setup
+## Setup
 Base environment setup, API keys (.env), and model selection (config.yaml) follow the main branch README.md. With your existing .venv activated:
    1) Install pandas (required for dataset preprocessing and metric aggregation):
 ```bash
@@ -35,7 +35,7 @@ pip install pandas
    2) Add the dataset: Place the full MediaSpin CSV in the project root as mediaspin_full.csv (or update the FULL_CSV path at the top of validation/prepare_dataset.py).
    3) Verify LLM configuration: Ensure llm_framing_analyzer in config.yaml points to the model and API key you want to benchmark.
 
-##Running the Benchmark
+## Running the Benchmark
 Run both scripts from the root directory, using the same python virtual environment as the main branch, in this order:
 ```bash
 python validation/prepare_dataset.py
