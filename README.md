@@ -1,121 +1,48 @@
-# UNFAKE
+# UNFAKE — Validation Branch
 
-**UNFAKE** is an innovative, machine learning and AI powered web application designed to combat misinformation, polarization, and echo chambers. Unlike traditional platforms that evaluate the overall reliability of a news outlet, UNFAKE performs a comparative, headline-level analysis, showing exactly how different media frame the same event. 
+This branch contains the offline validation suite used to benchmark **UNFAKE**'s LLM-based headline analysis against labeled ground-truth datasets. 
 
-Bypassing the historical reputation of individual newspapers, the infrastructure analyzes the language used through a complex pipeline that processes data retrieved from over 80,000 global journalistic sources.
-
-### Key Features
-
-Our engine analyzes headlines across **6 key dimensions**:
-* **Bias Detection:** 13 types of bias (e.g., political, gender, sensationalism).
-* **Agency Analysis:** Identifies actors (active, passive, mentioned).
-* **Generic Framing:** 5 types (conflict, thematic, episodic, etc.).
-* **Intent Detection:** 5 editorial intents (informative, investigative, etc.).
-* **Tone Intensity:** Language intensity evaluation on a 1-5 scale.
-* **Emotion Detection:** Identification of the 2 main emotions among 28 categories.
-
-### Technology Stack
-
-* **Backend:** Python 3.12, Flask 3.1.1 (Async/await architecture).
-* **AI & NLP:** Google Gemini 3.1 Flash-Lite (interchangeable with Deepseek), Sentence Transformers, RoBERTa (GoEmotions).
-* **Data Sources:** Duckduckgo, NewsAPI, GNews API.
-* **Database & Analytics:** Firebase Firestore, real-time feedback system.
-* **Frontend & UI:** HTML, CSS, JavaScript (Interactive analytics dashboard).
+Unlike the `main` branch web application, this pipeline bypasses Flask, live news retrieval APIs, Firebase, and the local RoBERTa emotion classifier to evaluate the LLM framing analyzer (`llm_framing_analysis`) in isolation.
 
 ---
 
-## Environment Setup
+## Current Scope: Bias Detection
 
-**Prerequisite:** Make sure you have *Python 3.12.3* or higher installed.
+The first validation module evaluates **Bias Detection** using the **MediaSpin** corpus (`anonymous.4open.science/r/mediaspin-A5C7`), which pairs `original_headline` and `edited_headline` versions of the same news story and annotates which bias type was introduced (`1`), removed (`-1`), or unchanged (`0`).
 
-### 1. Creating and Activating the Virtual Environment
+### Category Mapping
 
-**On Windows:**
-```bash
-python -m venv .venv
-# Using PowerShell:
-.\.venv\Scripts\Activate.ps1
-# Using CMD:
-.\.venv\Scripts\activate.bat
-```
-**On Linux / MacOS:**
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-VSCode Users: After activating the environment in the terminal, ensure you select the correct interpreter via the Command Palette (Ctrl + Shift + P → Python: Select Interpreter → .venv). Otherwise, VSCode may run the global Python installation.
+Because MediaSpin focuses on editorial and linguistic spin rather than demographic biases (`GENDER`, `CULTURAL`, `AGE`, `RELIGION`, `DISABILITY`) or `NEGATIVITY`, this benchmark covers **7 of UNFAKE's 13 bias categories**:
 
-### 2. Managing Dependencies
-Once the virtual environment is activated, upgrade pip and install the requirements:
-```bash
-# Windows:
-python -m pip install --upgrade pip
-# Linux / MacOS:
-pip install -r requirements.txt
-```
-Note: Run pip install -r requirements.txt every time the file is updated. If you install new dependencies, remember to run pip freeze > requirements.txt to update the file.
+| MediaSpin Column | UNFAKE `Bias` Enum | Description |
+| :--- | :--- | :--- |
+| `opinion_statements_presented_as_fact_value` | `OPINION` (13) | Subjective judgments framed as objective facts |
+| `sensationalism_value` | `SENSATIONALISM` (9) | Hyperbolic or dramatic language |
+| `mudslinging_value` | `ADHOMINEM` (12) | Personal attacks or character insults |
+| `subjective_qualifying_adjectives_value` | `SUBJECTIVE` (11) | Evaluative adjectives inserted by the author |
+| `word_choice_value` | `STATEMENT` (7) | Loaded or ideologically coded terminology |
+| `bias_by_omission_value` | `OMISSION` (8) | One-sided framing missing key actors or perspectives |
+| `slant_value` | `POLITICAL` (1) | Partisan or ideological framing |
 
 ---
 
-## Configuration
-
-Environment Variables (.env)
-
-Create a .env file at the base of the project folder. This file should never be committed to the remote repository.
-
-Add the following environment variables required to run the code:
-
-### Get your API key at: [https://newsapi.org/](https://newsapi.org/)
+##Setup
+Base environment setup, API keys (.env), and model selection (config.yaml) follow the main branch README.md. With your existing .venv activated:
+   1) Install pandas (required for dataset preprocessing and metric aggregation):
 ```bash
-NEWSAPI_KEY=your_newsapi_key
+pip install pandas
 ```
-### Get your API key at: [https://gnews.io/](https://gnews.io/)
-```bash
-GNEWS_KEY=your_gnews_key
-```
-### Get your API key at: [https://aistudio.google.com/api-keys](https://aistudio.google.com/api-keys)
-```bash
-GEMINI_API_KEY=your_gemini_api_key
-```
+   2) Add the dataset: Place the full MediaSpin CSV in the project root as mediaspin_full.csv (or update the FULL_CSV path at the top of validation/prepare_dataset.py).
+   3) Verify LLM configuration: Ensure llm_framing_analyzer in config.yaml points to the model and API key you want to benchmark.
 
-### Local Emotion Model Setup
-
-To run the RoBERTa emotion classifier offline, download the model weights (~500 MB) into the `models/` directory (excluded via `.gitignore`) before starting the server. With your virtual enviroment activated:
+##Running the Benchmark
+Run both scripts from the root directory, using the same python virtual environment as the main branch, in this order:
+```bash
+python validation/prepare_dataset.py
+```
+Which filters out malformed annotations and identical headline pairs and samples 25 pairs per category (25 original headlines with ground_truth = 0 and 25 edited headlines where the target bias was added, ground_truth = 1), producing 350 headlines in validation/benchmark_bias.csv.
 
 ```bash
-hf download SamLowe/roberta-base-go_emotions --local-dir ./models/roberta-go-emotions
+python validation/run_bias_validation.py
 ```
-
-### AI Models Configuration (config.yaml)
-
-The models used for AI-based tasks at runtime can be easily specified by changing the config.yaml file. Currently, Gemini and Deepseek are available. The tool is designed to be modular for future implementations.
-
-### Firebase Database (firebase-credentials.json)
-
-The backend requires a private key to securely and programmatically interact with the Firebase database.
-
-   1. Log in to the Firebase Console.
-
-   2. Select your "UNFAKE" project.
-
-   3. Go to Project settings (gear icon) → Service accounts.
-
-   4. Click Generate new private key.
-
-   5. Rename the downloaded file to firebase-credentials.json.
-
-   6. Place the file in the base folder of the project (at the same level as app.py and .env).
-
-   #### IMPORTANT SECURITY NOTE: The firebase-credentials.json file grants full access to your database. Never commit this file to the Git repository.
-
----
-
-## Launch
-To start the local web server, run:
-```bash
-python app.py
-```
-For debugging purposes or to display the real-time output of the query expansion, retrieval, and framing analysis pipeline in the terminal, use the optional verbose argument:
-```bash
-python app.py --verbose
-```
+That evaluates original and edited splits in separate passes (15 headlines per batch) so the LLM analyzes each headline independently without comparing pairs side-by-side, prints a per-category summary table and saves full structured outputs to validation/results_bias.json.
