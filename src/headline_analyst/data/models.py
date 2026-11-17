@@ -155,18 +155,30 @@ class Analysis:
     @classmethod
     def from_json(cls, data: dict):
         """Parses the Schema JSON format into an Analysis object."""
+        raw_bias = data.get('bias', [])
+        if isinstance(raw_bias, dict):
+            biases = {
+                Bias(int(k)): v
+                for k, v in raw_bias.items()
+                if 1 <= int(k) <= 13
+            }
+        else:
+            biases = {
+                Bias(int(item['bias_id'])): item['score']
+                for item in raw_bias
+                if 1 <= int(item['bias_id']) <= 13
+            }
 
         return cls(
             headline_index=data['id'],
-            
-            biases = {Bias(int(k)): v for k, v in data['bias'].items()},
-            agencies = [
+            biases=biases,
+            agencies=[
                 Entity(name=a['name'], role=Agency(a['role'])) 
                 for a in data['agency']
             ],
-            frame = GenericFraming(data['framing']),
-            focus = [Focus(int(k)) for k in data['focus']],
-            genre = Genre(data['genre']),
+            frame=GenericFraming(data['framing']),
+            focus=[Focus(int(k)) for k in data['focus']],
+            genre=Genre(data['genre']),
             tone_intensity=data['tone'],
             emotions=[]
         )
@@ -175,13 +187,17 @@ class Analysis:
 # Using Pydantic, guarantee that the data types returned match the defined expectations, 
 # converting data to the correct type where necessary.
 
+class BiasModel(BaseModel):
+    bias_id: int = Field(description="Bias Enum ID (1-13)")
+    score: int = Field(description="Intensity score (1: minor, 2: noticeable, 3: dominant)")
+
 class AgencyModel(BaseModel):
     name: str = Field(description="Name of the entity detected")
     role: int = Field(description="Agency Enum ID (1: Passive, 2: Active, 3: Mentioned)")
 
 class AnalysisItem(BaseModel):
     id: int = Field(description="The index of the headline")
-    bias: Dict[str, int] = Field(description="Map of Bias Enum IDs (1-13) to intensity 1-3. Empty {} if none.")
+    bias: List[BiasModel] = Field(description="List of detected biases (ID 1-13 and score 1-3). Empty [] if none.")
     agency: List[AgencyModel]
     framing: int = Field(description="GenericFraming Enum ID (1-6)")
     focus: List[int] = Field(description="List of max 2 objects mapping Focus ID (1-14)", max_length=2)
