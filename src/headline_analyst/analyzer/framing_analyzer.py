@@ -18,15 +18,15 @@ CRITICAL RULES:
 
 METRIC DEFINITIONS
 
-1. BIAS  →  "bias": {{ BiasID: score, ... }}
+1. BIAS  →  "bias": [ {{ "bias_id": BiasID, "score": 1-3 }}, ... ]
 Identify all bias types present in the headline. A headline may exhibit multiple types simultaneously.
 For each detected bias, assign a score:
   1 = minor, does not significantly affect neutrality
   2 = noticeable, somewhat influences framing or perception
   3 = dominant, strongly shapes the narrative
-If no bias is detected, return an empty object: {{}}
+If no bias is detected, return an empty list: []
 
-Bias types (use integer ID as key):
+Bias types (use integer ID for "bias_id"):
   1 POLITICAL: Favors or criticizes a political viewpoint, party, or figure.
     Look for: partisan labels, uneven treatment of political actors, ideological framing.
     e.g. "The radical left continues to sabotage the economy."
