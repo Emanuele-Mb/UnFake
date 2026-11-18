@@ -22,17 +22,8 @@ Base environment setup, API keys (.env), and model selection (config.yaml) follo
 ```bash
 pip install pandas
 ```
-   2) Add the dataset: Place the full MediaSpin CSV in the project root as mediaspin_full.csv (or update the FULL_CSV path at the top of validation/prepare_dataset.py).
+   2) Add the dataset: Place the datasets in a datasets folder inside the validation folder.
    3) Verify LLM configuration: Ensure llm_framing_analyzer in config.yaml points to the model and API key you want to benchmark.
 
-## Running the Benchmark
-Run both scripts from the root directory, using the same python virtual environment as the main branch, in this order:
-```bash
-python validation/prepare_dataset.py
-```
-Which filters out malformed annotations and identical headline pairs and samples 25 pairs per category (25 original headlines with ground_truth = 0 and 25 edited headlines where the target bias was added, ground_truth = 1), producing 350 headlines in validation/benchmark_bias.csv.
-
-```bash
-python validation/run_bias_validation.py
-```
-That evaluates original and edited splits in separate passes (15 headlines per batch) so the LLM analyzes each headline independently without comparing pairs side-by-side, prints a per-category summary table and saves full structured outputs to validation/results_bias.json.
+## Run the Benchmark
+Run the validation scripts from the root directory, using the same python virtual environment as the main branch.
