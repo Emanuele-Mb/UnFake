@@ -1,0 +1,5 @@
+This folder contains the scripts to run bias validation using the Mediaspin dataset, which covers the following biases:
+  1) Gender
+  2) Age 
+  3) Religion
+  4) Disability
