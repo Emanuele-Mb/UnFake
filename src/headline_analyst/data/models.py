@@ -1,12 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Literal
 from pydantic import BaseModel, Field, field_validator
 
 # ---------------- ENUMS -------------------------- #
 
-# Possible bias types found in the framing of a headline
 class Bias(Enum):
     POLITICAL = 1
     GENDER = 2
@@ -15,32 +14,44 @@ class Bias(Enum):
     RELIGION = 5
     DISABILITY = 6
     STATEMENT = 7
-    OMISSION = 8
-    SENSATIONALISM = 9
-    NEGATIVITY = 10
-    SUBJECTIVE = 11
-    ADHOMINEM = 12
-    OPINION = 13
+    SENSATIONALISM = 8
+    NEGATIVITY = 9
+    SUBJECTIVE = 10
+    ADHOMINEM = 11
+    OPINION = 12
 
-# For NER -> detect if an entity is the active subject of an action, passive, or just mentionned
+
+BiasName = Literal[
+    "POLITICAL",
+    "GENDER",
+    "CULTURAL",
+    "AGE",
+    "RELIGION",
+    "DISABILITY",
+    "STATEMENT",
+    "SENSATIONALISM",
+    "NEGATIVITY",
+    "SUBJECTIVE",
+    "ADHOMINEM",
+    "OPINION",
+]
+
+
 class Agency(Enum):
     PASSIVE = 1
     ACTIVE = 2
     MENTIONNED = 3
 
-# Generic Frames of the headline
-# based on the research paper "The Power of Framing: How News Headlines Guide Search Behavior"
-# + additional categories
+
 class GenericFraming(Enum):
-    CONFLICT = 1 # Conflic between actors, issues or interpretations
-    GAME_STRATEGY = 2 # focuses on efforts of actors to achieve specific goals
-    THEMATIC = 3 # centers on the substantive content of public concerns and issues
-    HUMAN_INTEREST = 4 # narrates event from perspective of individuals affected by the issues
-    EPISODIC = 5 # presents events without extensive context or connection to broader themes
+    CONFLICT = 1
+    GAME_STRATEGY = 2
+    THEMATIC = 3
+    HUMAN_INTEREST = 4
+    EPISODIC = 5
     OTHER = 6
 
 
-# Evaluative Focus : the perspective through which the topic is presented
 class Focus(Enum):
     ECONOMIC = 1
     RESOURCES = 2
@@ -57,7 +68,7 @@ class Focus(Enum):
     POLITICAL = 13
     OTHER = 14
 
-# Intent behind the headline 
+
 class Genre(Enum):
     INFORMATIVE = 1
     INVESTIGATIVE = 2
@@ -66,7 +77,7 @@ class Genre(Enum):
     ENTERTAINMENT = 5
     OTHER = 6
 
-# From the GoEmotions dataset : 28 emotion categories + neutral
+
 class EmotionsEnum(Enum):
     ADMIRATION = 1
     AMUSEMENT = 2
@@ -77,7 +88,7 @@ class EmotionsEnum(Enum):
     CONFUSION = 7
     CURIOSITY = 8
     DESIRE = 9
-    DISAPPOINTMENT= 10
+    DISAPPOINTMENT = 10
     DISAPPROVAL = 11
     DISGUST = 12
     EMBARASSMENT = 13
@@ -112,7 +123,7 @@ class Article:
 
     def __str__(self):
         return f"{self.title}, source='{self.source}', query_origin='{self.query_origin}' - URL : {self.url}"
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -124,7 +135,7 @@ class Entity:
 
     def __str__(self):
         return f"{self.name}, role='{self.role.name}'"
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -144,77 +155,89 @@ class Emotion:
 @dataclass
 class Analysis:
     headline_index: int
-    biases: Dict[Bias, int]  # Maps Enum to the 1-3 score
+    biases: Dict[Bias, int]
     agencies: List[Entity]
     frame: GenericFraming
     focus: List[Focus]
     genre: Genre
-    tone_intensity: int # 1 - 5 score
-    emotions: List[Emotion] = Field(default_factory=list)
+    tone_intensity: int
+    emotions: List[Emotion] = field(default_factory=list)
+
+    @classmethod
+    def _parse_bias_key(cls, raw_key) -> Bias | None:
+        if isinstance(raw_key, Bias):
+            return raw_key
+        if isinstance(raw_key, int) and 1 <= raw_key <= 13:
+            return Bias(raw_key)
+        if isinstance(raw_key, str):
+            cleaned = raw_key.strip().upper()
+            if cleaned.isdigit() and 1 <= int(cleaned) <= 13:
+                return Bias(int(cleaned))
+            if cleaned in Bias.__members__:
+                return Bias[cleaned]
+        return None
 
     @classmethod
     def from_json(cls, data: dict):
         """Parses the Schema JSON format into an Analysis object."""
-        raw_bias = data.get('bias', [])
+        raw_bias = data.get("bias", [])
+        biases: Dict[Bias, int] = {}
+
         if isinstance(raw_bias, dict):
-            biases = {
-                Bias(int(k)): v
-                for k, v in raw_bias.items()
-                if 1 <= int(k) <= 13
-            }
+            for k, v in raw_bias.items():
+                b_enum = cls._parse_bias_key(k)
+                if b_enum is not None:
+                    biases[b_enum] = int(v)
         else:
-            biases = {
-                Bias(int(item['bias_id'])): item['score']
-                for item in raw_bias
-                if 1 <= int(item['bias_id']) <= 13
-            }
+            for item in raw_bias:
+                raw_key = item.get("bias_type") if "bias_type" in item else item.get("bias_id")
+                b_enum = cls._parse_bias_key(raw_key)
+                if b_enum is not None:
+                    biases[b_enum] = int(item["score"])
 
         return cls(
-            headline_index=data['id'],
+            headline_index=data["id"],
             biases=biases,
             agencies=[
-                Entity(name=a['name'], role=Agency(a['role'])) 
-                for a in data['agency']
+                Entity(name=a["name"], role=Agency(a["role"]))
+                for a in data["agency"]
             ],
-            frame=GenericFraming(data['framing']),
-            focus=[Focus(int(k)) for k in data['focus']],
-            genre=Genre(data['genre']),
-            tone_intensity=data['tone'],
-            emotions=[]
+            frame=GenericFraming(data["framing"]),
+            focus=[Focus(int(k)) for k in data["focus"]],
+            genre=Genre(data["genre"]),
+            tone_intensity=data["tone"],
+            emotions=[],
         )
 
-# ------------------- CLASSES FOR THE FORMATTING OF JSON OUTPUTS FOR GEMINI ------------------------- #
-# Using Pydantic, guarantee that the data types returned match the defined expectations, 
-# converting data to the correct type where necessary.
+
+# ------------------- CLASSES FOR THE FORMATTING OF JSON OUTPUTS ------------------------- #
 
 class BiasModel(BaseModel):
-    bias_id: int = Field(description="Bias Enum ID (1-13)")
-    score: int = Field(description="Intensity score (1: minor, 2: noticeable, 3: dominant)")
+    bias_type: BiasName = Field(description="Exact bias category name")
+    score: int = Field(description="Intensity score (1: subtle/mild, 2: noticeable, 3: dominant)")
+
 
 class AgencyModel(BaseModel):
     name: str = Field(description="Name of the entity detected")
     role: int = Field(description="Agency Enum ID (1: Passive, 2: Active, 3: Mentioned)")
 
+
 class AnalysisItem(BaseModel):
     id: int = Field(description="The index of the headline")
-    bias: List[BiasModel] = Field(description="List of detected biases (ID 1-13 and score 1-3). Empty [] if none.")
+    bias: List[BiasModel] = Field(description="List of detected biases and scores (1-3). Empty [] only if strictly neutral.")
     agency: List[AgencyModel]
     framing: int = Field(description="GenericFraming Enum ID (1-6)")
-    focus: List[int] = Field(description="List of max 2 objects mapping Focus ID (1-14)", max_length=2)
+    focus: List[int] = Field(description="List of max 2 Focus IDs (1-14)", max_length=2)
     genre: int = Field(description="Genre Enum ID (1-6)")
     tone: int = Field(description="Tone intensity score 1-5")
 
-    @field_validator('focus', mode='before')
+    @field_validator("focus", mode="before")
     @classmethod
     def truncate_focus(cls, v):
         if isinstance(v, list) and len(v) > 2:
             return v[:2]
         return v
 
+
 class AnalysisResponse(BaseModel):
     analyses: List[AnalysisItem]
-
-
-# Test
-if __name__ == "__main__":
-    print(AnalysisResponse.model_json_schema())
