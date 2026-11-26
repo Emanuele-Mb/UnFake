@@ -6,8 +6,9 @@ from .framing_analyzer import FramingAnalyzer
 from headline_analyst.utils.requests import httpx_request_with_retries
 from headline_analyst.data import *
 
+
 class GeminiFramingAnalyzer(FramingAnalyzer):
-    """Free Gemini cloud LLM (1500 req/day free tier) for headline framing analysis"""
+    """Gemini cloud LLM for headline framing analysis"""
 
     def __init__(self, api_key: str, model: str, url: str):
         super().__init__(AnalysisResponse)
@@ -30,16 +31,15 @@ class GeminiFramingAnalyzer(FramingAnalyzer):
         if self.client is None:
             raise RuntimeError("Client not initialized. Use async with.")
 
-        # Pass parameters into the prompt template
         prompt = self._build_prompt(articles)
-        
-        # JSON formatting requirements
+
         json_req = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
+                "temperature": 0.0,
                 "response_mime_type": "application/json",
-                "response_schema": self.schema # from parent class
-            }
+                "response_schema": self.schema,
+            },
         }
 
         response = await httpx_request_with_retries(
@@ -47,10 +47,10 @@ class GeminiFramingAnalyzer(FramingAnalyzer):
             url=self.url,
             client=self.client,
             json=json_req,
-            timeout=30.0,
-            max_retries=3
+            timeout=60.0,
+            max_retries=3,
         )
-        
+
         raw = response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
         return self._parse_response(raw, expected_length=len(articles))
