@@ -7,7 +7,7 @@ Bypassing the historical reputation of individual newspapers, the infrastructure
 ### Key Features
 
 Our engine analyzes headlines across **6 key dimensions**:
-* **Bias Detection:** 13 types of bias (e.g., political, gender, sensationalism).
+* **Bias Detection:** 12 types of bias (e.g., political, gender, sensationalism).
 * **Agency Analysis:** Identifies actors (active, passive, mentioned).
 * **Generic Framing:** 5 types (conflict, thematic, episodic, etc.).
 * **Intent Detection:** 5 editorial intents (informative, investigative, etc.).
